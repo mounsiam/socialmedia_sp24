@@ -49,6 +49,36 @@ def index(request):
 
 
 @login_required
+def NewPost(request):
+    user = request.user
+    profile = get_object_or_404(Profile, user=user)
+    tags_obj = []
+
+    if request.method == "POST":
+        form = NewPostform(request.POST, request.FILES)
+        if form.is_valid():
+            picture = form.cleaned_data.get('picture')
+            caption = form.cleaned_data.get('caption')
+            tag_form = form.cleaned_data.get('tags')
+            tag_list = list(tag_form.split(','))
+
+            for tag in tag_list:
+                t, created = Tag.objects.get_or_create(title=tag)
+                tags_obj.append(t)
+            p, created = Post.objects.get_or_create(picture=picture, caption=caption, user=user)
+            p.tags.set(tags_obj)
+            p.save()
+            return redirect('profile', request.user.username)
+    else:
+        form = NewPostform()
+    context = {
+        'form': form
+    }
+    return render(request, 'newpost.html', context)
+
+
+
+@login_required
 def favourite(request, post_id):
     user = request.user
     post = Post.objects.get(id=post_id)
